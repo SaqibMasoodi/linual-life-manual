@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ListTodo, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Plus, Trash2 } from "lucide-react";
 import { StorageEngine } from "../../lib/storage";
 import { Task, Note } from "../../types";
 import { CharacterArtImage } from "../GeneratedArt";
@@ -115,6 +115,7 @@ export const TasksAndNotesView: React.FC<TasksAndNotesViewProps> = ({ onXpChange
           >
             Notes ({notes.length})
           </button>
+        </div>
       </div>
 
       {/* TASKS VIEW */}
