@@ -41,6 +41,28 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onXpChange }) => {
 
   const COLORS = ["#5A6A5A", "#B07D62", "#8c9b8c", "#d19a7d", "#485348", "#87604b"];
 
+  const handleAddTx = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || amount === "") return;
+    const newTx: Transaction = {
+      id: "tx_" + Date.now(),
+      title,
+      amount: Number(amount),
+      type,
+      category,
+      date: new Date().toISOString().split("T")[0],
+    };
+    const updated = [newTx, ...txs];
+    setTxs(updated);
+    StorageEngine.setFinance(updated);
+    setShowAddModal(false);
+    setTitle("");
+    setAmount("");
+    setType("expense");
+    setCategory("Food");
+    onXpChange(10);
+  };
+
   return (
     <div className="space-y-6 pb-12 text-[#2D2D2A]">
       {/* Title Header */}

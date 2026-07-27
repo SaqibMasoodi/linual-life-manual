@@ -16,24 +16,57 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Web Dist
-        run: npm run build
+      - name: Build Web Dist (frontend only, no server bundle)
+        run: npx vite build
 
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
-      - name: Build iOS Xcode App
+      - name: Resolve Swift Package Dependencies
         run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -sdk iphonesimulator -configuration Release CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -clonedSourcePackagesDirPath SourcePackages
 
-      - name: Upload iOS App Artifact
+      - name: Archive (unsigned, real device architecture)
+        run: |
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath ${{ github.workspace }}/build/App.xcarchive \
+            -clonedSourcePackagesDirPath SourcePackages \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            | xcpretty
+
+      - name: Package unsigned IPA (ready for Sideloadly)
+        run: |
+          APP_PATH=$(find ${{ github.workspace }}/build/App.xcarchive \
+            -name "*.app" -maxdepth 5 | head -1)
+          echo "Found .app at: $APP_PATH"
+
+          mkdir -p ${{ github.workspace }}/build/ipa/Payload
+          cp -r "$APP_PATH" ${{ github.workspace }}/build/ipa/Payload/
+
+          cd ${{ github.workspace }}/build/ipa
+          zip -r ../Linual-LifeOS.ipa Payload
+
+          echo "IPA created at: ${{ github.workspace }}/build/Linual-LifeOS.ipa"
+          ls -lh ${{ github.workspace }}/build/Linual-LifeOS.ipa
+
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Linual-iOS-iPadOS-Simulator-App
-          path: ios/App/build/Release-iphonesimulator/App.app
+          name: Linual-LifeOS-IPA
+          path: build/Linual-LifeOS.ipa
+          if-no-files-found: error
