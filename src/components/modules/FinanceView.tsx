@@ -25,6 +25,30 @@ export const FinanceView: React.FC<FinanceViewProps> = ({ onXpChange }) => {
   const [type, setType] = useState<"income" | "expense">("expense");
   const [category, setCategory] = useState<Transaction["category"]>("Food");
 
+  const handleAddTx = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title || !amount) return;
+
+    const newTx: Transaction = {
+      id: "tx_" + Date.now(),
+      date: new Date().toISOString().split("T")[0],
+      title,
+      amount: Number(amount),
+      type,
+      category,
+    };
+
+    const updated = [newTx, ...txs];
+    setTxs(updated);
+    StorageEngine.setFinance(updated);
+    setShowAddModal(false);
+    setTitle("");
+    setAmount("");
+    setType("expense");
+    setCategory("Food");
+    onXpChange(10);
+  };
+
   const { totalIncome, totalExpense, balance } = useMemo(() => {
     const inc = txs.filter((t) => t.type === "income").reduce((acc, curr) => acc + curr.amount, 0);
     const exp = txs.filter((t) => t.type === "expense").reduce((acc, curr) => acc + curr.amount, 0);
